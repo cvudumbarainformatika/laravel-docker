@@ -1,0 +1,65 @@
+services:
+  #Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_docker
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "2024:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./src:/var/www
+    links:
+      - php
+    networks:
+      - laravel_network
+
+  #PHP Service
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: php:8.2-fpm
+    container_name: php_docker
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "6001:6001"
+    environment:
+      SERVICE_NAME: php
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./src:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - laravel_network
+
+  #MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: db_docker
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: 123456
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql/
+      - ./mysql/my.conf:/etc/mysql/my.conf
+    networks:
+      - laravel_network
+
+networks:
+  laravel_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+  
